@@ -1,2 +1,7 @@
 # hubitat-deako
-My Attempt at a Hubitat Driver for Deako smart switches
+
+My first attempt at a Hubitat driver
+
+Based on Deako API documented here:
+
+https://github.com/DeakoLights/local-integrations/blob/master/API.md
