@@ -63,6 +63,9 @@ void logsOff(){
     device.updateSetting("logEnable",[value:"false",type:"bool"])
 }
 
+def method () {
+}
+
 def updated() {
     log.info "updated..."
     log.warn "debug logging is: ${logEnable == true}"
@@ -76,8 +79,7 @@ def telnetStatus(String status) {
 	if (status == "receive error: Stream is closed" || status == "send error: Broken pipe (Write failed)") {
 		log.error("Telnet connection dropped")
         sendEvent([name: "Telnet", value: "Disconnected"])
-		telnetClose()
-		runIn(5, initialize())
+        initialize()
     }
 }
 
