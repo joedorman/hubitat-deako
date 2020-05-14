@@ -23,6 +23,7 @@ metadata
 {
 	definition (name: "Deako Connect", namespace: "joedorman", author: "Joe Dorman")  {
         capability "Initialize"
+        capability "Polling"
         attribute "Telnet", ""
         command "childRefresh"
         command "deleteChildren"
@@ -37,33 +38,49 @@ metadata
 	        input name: "ipaddress", type: "string", title: "IP Address of Deako Connect", required: true, displayDuringSetup: true
             input name: "logEnable", type: "bool", title: "Enable debug logging", defaultValue: true
             input name: "txtEnable", type: "bool", title: "Enable descriptionText logging", defaultValue: true
+            input name: "PollSchedule", type: "enum", description: "", title: "Poll frequency in min", options: [[1:"1"],[2:"5"],[3:"15"],[4:"30"]], defaultValue: 1
 		}
 	}
 }
 def initialize(){
+    closeTelnet()
 	try {
 		if(logEnable) log.debug "Opening telnet connection"
 		sendEvent([name: "Telnet", value: "Opening"])
+        log.info "Telnet connection opening"
 		telnetConnect([terminalType: 'VT100'], "${ipaddress}", 23, null, null)
 		//give it a chance to start
 		pauseExecution(1000)
-		if(logEnable) log.debug "Telnet connection established"
+		log.info "Telnet connection established"
         sendEvent([name: "Telnet", value: "Open"])
     } catch(e) {
 		log.warn "Initialize Error: ${e.message}"
     }
-
+    unschedule()
+    runEvery1Minute(pollSchedule);log.info('pollSchedule 1 minute')
 }
 
 def installed() {
 }
 
+def poll() {
+    log.info "Polling"
+    forcePoll()
+}
+
+def forcePoll(){
+	if (logEnable) log.debug "Polling"
+	ping()
+}
+
+def pollSchedule(){
+    forcePoll()
+}
+
+
 void logsOff(){
     log.warn "debug logging disabled..."
     device.updateSetting("logEnable",[value:"false",type:"bool"])
-}
-
-def method () {
 }
 
 def updated() {
@@ -81,6 +98,11 @@ def telnetStatus(String status) {
         sendEvent([name: "Telnet", value: "Disconnected"])
         initialize()
     }
+}
+
+def closeTelnet(){
+    telnetClose() 
+	unschedule()
 }
 
 def childRefresh() {
