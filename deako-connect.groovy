@@ -53,8 +53,15 @@ def initialize(){
 		pauseExecution(1000)
 		log.info "Telnet connection established"
         sendEvent([name: "Telnet", value: "Open"])
+        state.reconnectDelay = 1
     } catch(e) {
 		log.warn "Initialize Error: ${e.message}"
+        
+        // first delay is 2 seconds, doubles every time
+        state.reconnectDelay = (state.reconnectDelay ?: 1) * 2
+        // don't let delay get too crazy, max it out at 10 minutes
+        if(state.reconnectDelay > 600) state.reconnectDelay = 600
+        runIn(state.reconnectDelay, initialize)
     }
     unschedule()
     runEvery1Minute(pollSchedule);log.info('pollSchedule 1 minute')
@@ -96,13 +103,16 @@ def telnetStatus(String status) {
 	if (status == "receive error: Stream is closed" || status == "send error: Broken pipe (Write failed)") {
 		log.error("Telnet connection dropped")
         sendEvent([name: "Telnet", value: "Disconnected"])
-        initialize()
-    }
+        // first delay is 2 seconds, doubles every time
+        state.reconnectDelay = (state.reconnectDelay ?: 1) * 2
+        // don't let delay get too crazy, max it out at 10 minutes
+        if(state.reconnectDelay > 600) state.reconnectDelay = 600
+        runIn(state.reconnectDelay, initialize)    }
 }
 
 def closeTelnet(){
     telnetClose() 
-	unschedule()
+//	unschedule()
 }
 
 def childRefresh() {
